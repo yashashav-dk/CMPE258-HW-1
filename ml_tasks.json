@@ -1,0 +1,98 @@
+{
+    "version": "1.1.0",
+    "prompt_language": "en",
+    "interface_protocols": {
+        "pytorch_task_v1": {
+            "entrypoint": "python tasks/<task_id>/task.py",
+            "prompt_instructions": "Implement this ML task as a SINGLE self-contained Python file (task.py). Include all required functions AND a complete `if __name__ == '__main__':` block that trains the model, evaluates on a validation split, prints standard metrics (MSE, R2, parameter accuracy where applicable), and asserts quality thresholds so the script exits non-zero on failure. Do NOT create separate test files or README. The script itself is the test.",
+            "must_have_files": [
+                "tasks/<task_id>/task.py"
+            ],
+            "required_functions": [
+                "get_task_metadata",
+                "set_seed",
+                "get_device",
+                "make_dataloaders",
+                "build_model",
+                "train",
+                "evaluate",
+                "predict",
+                "save_artifacts"
+            ],
+            "evaluation_rules": [
+                "The `evaluate()` function MUST compute and return standard metrics: MSE, R2 score, and any task-specific metrics on the VALIDATION data split.",
+                "The `if __name__ == '__main__':` block MUST: (1) train the model, (2) evaluate on BOTH train and validation splits, (3) print all metrics clearly, (4) assert quality thresholds (e.g., R2 > 0.9, MSE < threshold), (5) exit 0 on success or non-zero on failure.",
+                "Do NOT use a separate test file. All evaluation logic goes in main()."
+            ],
+            "required_cfg_keys": [],
+            "standard_outputs_schema": {},
+            "docstring_rules": []
+        }
+    },
+    "tasks": [
+        {
+            "series": "Convolutional Neural Networks",
+            "level": 5,
+            "id": "cnn_fashionmnist_adamw",
+            "algorithm": "CNN (FashionMNIST + AdamW + Cosine LR)",
+            "description": "Train a CNN on FashionMNIST using AdamW optimizer with cosine annealing learning rate schedule.",
+            "interface_protocol": "pytorch_task_v1",
+            "requirements": {
+                "data": "Use torchvision.datasets.FashionMNIST; train/test split from the dataset.",
+                "implementation": "CNN with 2 conv layers (32, 64), ReLU, MaxPool2d, dropout, 2 FC layers. Use AdamW optimizer and CosineAnnealingLR scheduler.",
+                "evaluation": "Compute accuracy on train and validation splits.",
+                "main_block": "Train for 5 epochs, print train/val accuracy, assert val accuracy > 0.85.",
+                "visualization": "Save loss curve to 'cnn_fashionmnist_loss.png'.",
+                "output": "Return dict with loss_history, val_loss_history, final metrics."
+            }
+        },
+        {
+            "series": "Autoencoders",
+            "level": 5,
+            "id": "ae_mnist_denoising",
+            "algorithm": "Denoising Autoencoder (MNIST)",
+            "description": "Train a denoising autoencoder on MNIST that learns to reconstruct clean images from noisy inputs.",
+            "interface_protocol": "pytorch_task_v1",
+            "requirements": {
+                "data": "Use torchvision.datasets.MNIST; add Gaussian noise (factor=0.3) to inputs.",
+                "implementation": "Encoder (784->256->64), Decoder (64->256->784) with sigmoid output. Adam optimizer. MSE reconstruction loss.",
+                "evaluation": "Compute reconstruction MSE on validation set (clean targets vs reconstructions from noisy inputs).",
+                "main_block": "Train for 10 epochs, print train/val MSE, assert val MSE < 0.05.",
+                "visualization": "Save original vs noisy vs reconstructed comparison to 'ae_mnist_samples.png'.",
+                "output": "Return dict with loss_history, val_loss_history, final metrics."
+            }
+        },
+        {
+            "series": "Neural Networks (MLP)",
+            "level": 5,
+            "id": "mlp_newsgroups_tfidf",
+            "algorithm": "MLP Text Classifier (TF-IDF + 20 Newsgroups)",
+            "description": "Classify text documents from 20 Newsgroups using TF-IDF features fed into an MLP.",
+            "interface_protocol": "pytorch_task_v1",
+            "requirements": {
+                "data": "Use sklearn.datasets.fetch_20newsgroups with 4-category subset. TfidfVectorizer(max_features=5000).",
+                "implementation": "MLP (5000->512->256->4), ReLU, dropout(0.3). Adam optimizer. CrossEntropyLoss.",
+                "evaluation": "Compute macro-F1, accuracy, per-class precision/recall on validation set.",
+                "main_block": "Train for 20 epochs, print metrics, assert macro-F1 > 0.75.",
+                "visualization": "Save confusion matrix to 'mlp_newsgroups_cm.png'.",
+                "output": "Return dict with loss_history, val_loss_history, final metrics."
+            }
+        },
+        {
+            "series": "Neural Networks (MLP)",
+            "level": 6,
+            "id": "mlp_housing_earlystop",
+            "algorithm": "MLP Regression (California Housing + Early Stopping)",
+            "description": "Regression on California Housing dataset with patience-based early stopping on validation MSE.",
+            "interface_protocol": "pytorch_task_v1",
+            "requirements": {
+                "data": "Use sklearn.datasets.fetch_california_housing. StandardScaler. 80/20 train/val split.",
+                "implementation": "MLP (8->64->32->1), ReLU. Adam optimizer. MSELoss. Early stopping with patience=5 on val MSE.",
+                "evaluation": "Compute MSE and R2 on validation set.",
+                "main_block": "Train up to 200 epochs (early stopping), print metrics, assert R2 > 0.60.",
+                "visualization": "Save train/val loss curves with early stopping point marked to 'mlp_housing_loss.png'.",
+                "output": "Return dict with loss_history, val_loss_history, stopped_epoch, final metrics."
+            }
+        }
+    ]
+}

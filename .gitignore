@@ -1,0 +1,6 @@
+.venv/
+.firecrawl/
+data/
+__pycache__/
+*.pyc
+tasks/*/output/
